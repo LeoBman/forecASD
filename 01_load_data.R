@@ -1,23 +1,27 @@
-### get the STRING shortest paths matrix
-library(Matrix)
-library(RBGL)
-dat = read.table("/sdata/STRING/9606.protein.links.v10.txt.gz",stringsAsFactors=F,header=T)
-dat[,1] = gsub("9606.","",dat[,1],fixed=T)
-dat[,2] = gsub("9606.","",dat[,2],fixed=T)
+#### load packages ####
+require(Matrix)
+require(RBGL)
 
-d2 = dat[dat[,3]>400,]
-dim(d2)
-g = ftM2graphNEL(as.matrix(d2[,1:2]))
-sp = johnson.all.pairs.sp(g)
+#### STRING network shortest paths matrix ####
+download.file(url = "http://version10.string-db.org/download/protein.links.v10/9606.protein.links.v10.txt.gz", 
+              destfile = "./ext_data/9606.protein.links.v10.txt.gz")
 
-dim(sp)
-summary(colSums(sp))
-sp[1:5,1:5]
+string.dat = read.table("./ext_data/9606.protein.links.v10.txt.gz", 
+                 stringsAsFactors=F,
+                 header=T)
 
-save(g,sp,file="STRING_graph.Rdata")
-#savehistory("STRING_shortest_paths_and_graph.Rhistory") ## in /sdat/STRING
+## clean up protein IDs
+string.dat[,1] = gsub("9606." , "", string.dat[,1], fixed=T)
+string.dat[,2] = gsub("9606.", "", string.dat[,2], fixed=T)
 
-### BrainSpan data
+## keep interactions with scores over 400
+string.keep = string.dat[string.dat[,3]>400,]
+string.graph = ftM2graphNEL(as.matrix(string.keep[,1:2]))
+string.path = johnson.all.pairs.sp(string.graph)
+
+save(string.graph, string.path, file="01_STRING_graph.Rdata")
+
+### BrainSpan data ####
 load("/sdata/BRAINSPAN/genes_matrix_csv/lowess_smoothed_expression_scaled.Rdata")
 e2e = read.table("/sdata/STRING/entrez_gene_id.vs.string.v10.28042015.tsv",sep="\t",stringsAsFactors=F)
 e2e[,2] = gsub("9606.","",e2e[,2],fixed=T)
@@ -37,8 +41,8 @@ save(bs,file="brainspan_expr_matrix_ensembl.Rdata")
 
 ### the training labels
 
-sfari = read.table('SFARI-Gene_genes_export01-11-2017.csv',sep=",",header=T,stringsAsFactors=F)
-sid = read.table("/sdata/STRING/sfari_gene_ids.txt",sep="\t",stringsAsFactors=F,header=T)
+sfari = read.table("./ext_data/SFARI-Gene_genes_export01-11-2017.csv",sep=",",header=T,stringsAsFactors=F)
+sid = read.table("./ext_data/sfari_gene_ids.txt",sep="\t",stringsAsFactors=F,header=T)
 
 top = sfari$gene.symbol[sfari$gene.score%in%c("1","2")]
 top = sid[sid[[2]]%in%top,][[4]]
@@ -55,6 +59,3 @@ set.seed(3716359)
 neg = sample(rn[!rn%in%sid[[4]]],1000)
 
 save(pos,neg,file="training_labels.Rdata")
-
-
-
