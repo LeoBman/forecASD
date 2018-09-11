@@ -1,0 +1,7 @@
+This directory contains external data which is needed for training the forecASD model. 
+
+############################################
+## SFARI-Gene_genes_export01-11-2017.csv  ##
+############################################
+  -> Downloaded from https://gene.sfari.org//wp-content/themes/sfari-gene/utilities/download-csv.php?api-endpoint=genes
+
