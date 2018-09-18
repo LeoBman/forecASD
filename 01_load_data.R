@@ -41,15 +41,17 @@ fac = read.table("./ext_data/brainspan/columns_metadata.csv",
 M = as.matrix(m[,-1])
 
 ## try to map missing entrez gene IDs via gene symbols
-load("./ext_data/entrezgene2symbol.Rdata")
-ann[is.na(ann$entrez_id),"entrez_id"] = names(eg_map)[match(ann[is.na(ann$entrez_id),]$gene_symbol,eg_map)]
+eg.map = read.table("./ext_data/entrezgene2symbol.csv",
+                    sep=",", header = T, stringsAsFactors = F)
+eg.map = structure(eg.map$symbol, names = eg.map$entrez)
+ann[is.na(ann$entrez_id),"entrez_id"] = names(eg.map)[match(ann[is.na(ann$entrez_id),]$gene_symbol,eg.map)]
 
 rownames(M) = ann$entrez
 
 ## convert all ages into weeks
 age = fac$age
-age_tmp = strsplit(age,split=" ")
-age_wk = sapply(age_tmp,function(x) {
+age.tmp = strsplit(age,split=" ")
+age.wk = sapply(age.tmp,function(x) {
   if(x[2]=="pcw") out=as.numeric(x[1])*1
   if(x[2]=="mos") out=as.numeric(x[1])*4.33 + 38
   if(x[2]=="yrs") out=as.numeric(x[1])*52 + 38
@@ -59,16 +61,18 @@ age_wk = sapply(age_tmp,function(x) {
 
 ## keep only structures found in most samples
 str = fac$structure_acronym
-these_str = names(table(str)[table(str)>20])
+these.str = names(table(str)[table(str)>20])
 
 ## smooth and interpolate data ##
 #### Lower number of parallel cores if fewer than 4 are available
 cl = makeSOCKcluster(4)
 
 ## function to smooth and interpolate data ##
-lw_smooth = function(y,x_age){
+lw.smooth = function(y,x_age){
   lw = lowess(log(x_age),y,f=1/3)
-  apx = approx(lw,xout=seq(2,log(2118),length.out=50),rule=2)
+  apx = approx(lw ,
+               xout = seq(2, log(2118), length.out = 50),
+               rule = 2)
   return(apx$y)
 }
 
@@ -76,12 +80,12 @@ expr = list()
 
 ## expr is a list where each element corresponds to the expression in 
 ## one brain region. genes are columns, timepoints are rows
-for(i in 1:length(these_str)){
-  here = these_str[i]
+for(i in 1:length(these.str)){
+  here = these.str[i]
   X = M[,str==here]
-  x_age = age_wk[str==here]
-  expr[[i]] = parApply(cl,X,1,lw_smooth,x_age)
-  names(expr)[i] = these_str[i]
+  x_age = age.wk[str==here]
+  expr[[i]] = parApply(cl,X,1,lw.smooth,x_age)
+  names(expr)[i] = these.str[i]
   print(i)
 }
 
@@ -136,7 +140,7 @@ colnames(bs) = 1:800
 
 ## replace NAs with median
 bs = na.roughfix(bs)
-save(bs,file="01_BrainSpan_matrix.Rdata")
+save(bs, file="01_BrainSpan_matrix.Rdata")
 
 ###### Training Labels ####
 
