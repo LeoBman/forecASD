@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 *.Rproj
+brainspan
+!*.gz
+!*.zip
