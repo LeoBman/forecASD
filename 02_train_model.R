@@ -1,69 +1,99 @@
-library(randomForest)
-setwd('/wdata/jmichaelson/SPARK/WG_network/forecASD/')
-##############################################
-### the BrainSpan RF
-##############################################
-load("brainspan_expr_matrix_ensembl.Rdata")
-load("training_labels.Rdata")
+# # # # # # # # # # # # 
+#### Load Packages ####
+# # # # # # # # # # # #
+require(randomForest)
 
-Xbs = bs[rownames(bs)%in%c(pos,neg),]
-ybs = as.factor(rownames(Xbs)%in%pos)
 
+# # # # # # # # # # # #
+#### BrainSpan RF #####
+# # # # # # # # # # # #
+load("01_BrainSpan_matrix.Rdata")
+load("01_training_labels.Rdata")
+
+pobs.x = bs[ rownames(bs) %in% c(pos,neg) , ]
+bs.y = as.factor(rownames(bs.x) %in% pos)
+
+## train random forest
 set.seed(5136)
-rfbs = randomForest(y=ybs,x=Xbs,ntree=1000,importance=T,strata=ybs,sampsize=c(76,76),do.trace=10,proximity=T)
+bs.rf = randomForest(y=bs.y,
+                     x=bs.x,
+                     ntree=1000,
+                     importance=T,
+                     strata=bs.y,
+                     sampsize=c(76,76),
+                     do.trace=10,
+                     proximity=T)
 
-prdBS = predict(rfbs,na.roughfix(bs[!rownames(bs)%in%rownames(Xbs),]),type="prob")
-prdBS = rbind(rfbs$vote,prdBS)
+## get predictions on all remaining genes
+bs.z =  na.roughfix(bs[ !rownames(bs) %in% rownames(bs.x) , ])
 
-save(rfbs,prdBS,file="brainspan_RF.Rdata")
+bs.prd = predict(bs.rf, bs.z, type="prob")
+bs.prd = rbind(bs.rf$vote, bs.prd)
 
-##############################################
-### the STRING RF
-##############################################
-load("STRING_graph.Rdata")
-load("training_labels.Rdata")
-X = sp[rownames(sp)%in%c(pos,neg),]
-y = rownames(X)%in%pos
-y = as.factor(rownames(X)%in%pos)
+save(bs.rf, bs.prd, file="02_brainspan_RF.Rdata")
+
+# # # # # # # # # # # # 
+#### the STRING RF ####
+# # # # # # # # # # # # 
+load("01_STRING_graph.Rdata")
+
+string.x = string.path[rownames(string.path) %in% c(pos,neg), ]
+string.y = as.factor( rownames(string.x) %in% pos )
 
 set.seed(2176)
-rf = randomForest(y=y,x=X,importance=T,strata=y,sampsize=c(77,77),ntree=500,do.trace=10,proximity=T)
+string.rf = randomForest(
+  y = string.y,
+  x = string.x,
+  importance = T,
+  strata = string.y,
+  sampsize = c(77,77),
+  ntree=500, 
+  do.trace=10,
+  proximity=T)
 
-strata = rf$y:rf$pred
+## stratify by predicted class lables
+strata = string.rf$y:string.rf$pred
+## sample size is smallest class in strata
 sampsize = rep(min(table(strata)),4)
 
+## fit a model while omitting variables which are not used in any tree
 set.seed(679)
-while(sum(varUsed(rf)<1)>0){
- rf = randomForest(y=y,x=X[,rownames(rf$importance)[varUsed(rf)>0]],importance=T,strata=strata,sampsize=sampsize,ntree=500,do.trace=100,proximity=T)
- print(paste(sum(varUsed(rf)==0),nrow(rf$importance)))
+while( sum( varUsed(string.rf) < 1 ) > 0 ){
+ string.rf = randomForest(
+   y = string.y,
+   x = string.x[, rownames(string.rf$importance)[varUsed(string.rf) > 0] ],
+   importance = T,
+   strata = strata,
+   sampsize = sampsize,
+   ntree = 500,
+   do.trace = 100,
+   proximity = T)
+ 
+ print(paste(sum(varUsed(string.rf)==0), "out of", nrow(string.rf$importance), "variables unused"))
 }
 
 
-prd = predict(rf,sp[!rownames(sp)%in%rownames(X),],type="prob")
-prd = rbind(prd,rf$vote)
-prd = prd[order(prd[,2],decreasing=T),]
+string.prd = predict(string.rf, string.path[!rownames(string.path) %in% rownames(string.x), ], type="prob")
+string.prd = rbind(string.prd, string.rf$vote)
+string.prd = string.prd[ order(string.prd[,2], decreasing=T), ]
 
-save(rf,prd,file="optimized_feat_sel_STRING_RF.Rdata")
+save(string.rf,string.prd,file="02_optimized_STRING_rf.Rdata")
 
+# # # # # # # # # # # # # #
+#### integrate scores #####
+# # # # # # # # # # # # # #
+## the STRING RF score, the BrainSpan RF score, and the TADA score
 
-### integrating the STRING RF score, the BrainSpan RF score, and the TADA score
-e2e = read.table("/sdata/STRING/entrez_gene_id.vs.string.v10.28042015.tsv",sep="\t",stringsAsFactors=F)
-e2e[,2] = gsub("9606.","",e2e[,2],fixed=T)
-e2e = structure(e2e[,2],names=as.character(e2e[,1]))
-missing = read.table("../brainspan_missing_ids.txt",sep="\t",header=T,stringsAsFactors=F)
-missing = missing[missing[[4]]%in%rownames(sp),]
-missing = missing[!duplicated(missing[[3]]),]
-missing = structure(missing[[4]],names=as.character(missing[[3]]))
-e2e = c(e2e,missing)
+load("01_id_conversion.Rdata")
 
-nn = rownames(prd)[rownames(prd)%in%rownames(prdBS)]
+nn = rownames(prd)[rownames(prd)%in%rownames(bs.prd)]
 load("/sdata/NCBI/entrezgene/entrezgene2symbol.Rdata")
 symbol = eg_map[names(e2e)[match(nn,e2e)]]
 
 tada = read.table("/wdata/jmichaelson/SPARK/WG_network/tada_BFs.txt",sep="\t",header=T,stringsAsFactors=F)
 tada = structure(tada[[2]],names=tada[[1]])
 
-Xpr = data.frame(string=prd[nn,2],brainspan=prdBS[nn,2],tada=tada[symbol])
+Xpr = data.frame(string=prd[nn,2],brainspan=bs.prd[nn,2],tada=tada[symbol])
 Xpr = na.roughfix(Xpr)
 
 Xtr = Xpr[rownames(Xpr)%in%c(pos,neg),]
@@ -108,7 +138,7 @@ s = structure(prdm[,2],names=rownames(prdm))
 s2 = structure(prdm_notada[,2],names=rownames(prdm_notada))
 df_out = data.frame(ensembl_string=names(s),entrez=names(e2e)[match(names(s),e2e)],
 	symbol=eg_map[names(e2e)[match(names(s),e2e)]],forecASD=s,STRING_score=prd[names(s),2],
-	BrainSpan_score=prdBS[names(s),2],forecASD_no_TADA=s2,
+	BrainSpan_score=bs.prd[names(s),2],forecASD_no_TADA=s2,
 	stringsAsFactors=F)
 
 df_out$mutation_rate = tada_mut[df_out$symbol]
