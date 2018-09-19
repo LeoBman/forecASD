@@ -163,3 +163,6 @@ set.seed(3716359)
 neg = sample(rn[ !(rn %in% sfari.id$Protein.stable.ID) ] , 1000)
 
 save(pos,neg,file="01_training_labels.Rdata")
+
+save(eg.map, missing, e2e, file = "01_id_conversion.Rdata")
+
