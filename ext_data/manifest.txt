@@ -1,7 +1,51 @@
 This directory contains external data which is needed for training the forecASD model. 
 
+###################################
+## 9606.protein.links.v10.txt.gz ##
+###################################
+  -> STRING protein links, version 10
+ 
+###############################
+## brainspan_missing_ids.txt ## 
+###############################
+  -> Mapping between entrez ID and ensembl proteinIDs for genes present in BrainSpan, but not always in STRING
+
+#########################
+## composite_table.csv ##
+#########################
+  -> Table with serveral metrics compiled into one place
+     -> Gene identifiers (entrez, ensembl, symbol)
+     -> SFARI scores
+     -> pLI: probability of intolerance to loss of function (see PMID:27535533)
+     -> Krishnan et al. posterior probability for being an ASD gene (see PMID:27479844)
+     -> D score and ensemble score from DAMAGES paper (see PMID: 27860035)
+     -> TADA scores (see PMID:25363760 &  PMID: 26402605)
+     -> DAWN scores (see PMID: 24602502)
+
+###########################
+## entrezgene2symbol.csv ##
+###########################
+  -> Mapping between entrez gene IDS and gene symbols  
+
+###############################################
+## entrez_gene_id.vs.string.v10.28042015.tsv ##
+###############################################
+  -> Mapping between entrez ID and ensembl proteinIDs circa version 10 of STRING 
+
+##########################
+## genes_matrix_csv.zip ##
+##########################
+  -> BrainSpan gene-level RNAseq expression
+
 ############################################
 ## SFARI-Gene_genes_export01-11-2017.csv  ##
 ############################################
   -> Downloaded from https://gene.sfari.org//wp-content/themes/sfari-gene/utilities/download-csv.php?api-endpoint=genes
+     -> This resource changes regularly and may be different from the data used in these models
+
+########################
+## sfari_gene_ids.txt ##
+########################
+  -> SFARI gene IDs with entrez and ensembl identifiers
+
 
