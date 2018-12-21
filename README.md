@@ -3,7 +3,7 @@ Forecasting autism gene discovery with machine learning and genome-scale data.
 
 Genes are one of the most powerful windows into the biology of autism. However, less than 100 genes are currently viewed as having robust enough evidence to be considered true "autism genes". 
 
-forecASD approaches autism gene discovery as a machine learning problem, rather than a genetic association problem, and uses genome-scale data from [STRING](http://version10.string-db.org/) and [Brainspan](http://www.brainspan.org/) as predictors for identifying further genes that have similar properties in the feature space compared to established autism risk genes. 
+forecASD approaches autism gene discovery as a machine learning problem, rather than a genetic association problem, and uses genome-scale data from [STRING](http://version10.string-db.org/) and [Brainspan](http://www.brainspan.org/) as predictors for identifying further genes that have similar properties in the feature space compared to established autism risk genes. Main supplemental table can be found in `suppl_data/forecASD_table`
 
 Preprint available here: https://www.biorxiv.org/content/early/2018/07/16/370601
 

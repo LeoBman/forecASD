@@ -54,7 +54,7 @@ meta.prd <- predict(rf,
         meta.test, 
         type = "prob")
 
-meta.score <- rbind(rf$votes, df.prd)
+meta.score <- rbind(rf$votes, meta.prd)
 
 final.data <- cbind(
   data.frame(
