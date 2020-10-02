@@ -22,14 +22,14 @@ string.keep = string.dat[string.dat[,3]>400,]
 string.graph = ftM2graphNEL(as.matrix(string.keep[,1:2]))
 string.path = johnson.all.pairs.sp(string.graph)
 
-save(string.graph, string.path, file="01_STRING_graph.Rdata")
+save(string.graph, string.path, file="tmp01_STRING_graph.Rdata")
 
 ### BRAINSPAN ####
 ## "genes_matrix_csv.zip" already in repo
 ## download.file(url = "http://www.brainspan.org/api/v2/well_known_file_download/267666529",
 ##               destfile = "./ext_data/genes_matrix_csv.zip") 
 
-unzip("./ext_data/genes_matrix_csv.zip", exdir = "ext_data/brainspan/")
+#unzip("./ext_data/genes_matrix_csv.zip", exdir = "ext_data/brainspan/")
 
 ## Import brainspan data
 m = read.table("./ext_data/brainspan/expression_matrix.csv",
@@ -145,24 +145,24 @@ save(bs, file="01_BrainSpan_matrix.Rdata")
 ###### Training Labels ####
 
 ## read in SFARI genes and gene IDs
-sfari = read.table("./ext_data/SFARI-Gene_genes_export01-11-2017.csv",sep=",",header=T,stringsAsFactors=F)
-sfari.id = read.table("./ext_data/sfari_gene_ids.txt",sep="\t",stringsAsFactors=F,header=T)
+#sfari = read.table("./ext_data/SFARI-Gene_genes_export01-11-2017.csv",sep=",",header=T,stringsAsFactors=F)
+#sfari.id = read.table("./ext_data/sfari_gene_ids.txt",sep="\t",stringsAsFactors=F,header=T)
 
 ## top are SFARI 1 and 2 genes
-top = sfari$gene.symbol[sfari$gene.score %in% c("1","2")]
-top = sfari.id$Protein.stable.ID[sfari.id$Gene.name %in% top]
-top = unique( top[ top %in% rownames(string.path) ] )
+#top = sfari$gene.symbol[sfari$gene.score %in% c("1","2")]
+#top = sfari.id$Protein.stable.ID[sfari.id$Gene.name %in% top]
+#top = unique( top[ top %in% rownames(string.path) ] )
 ## pos are top genes also in STRING
-pos = rownames(string.path)[ rownames(string.path) %in% top ]
-pos = unique(pos)
-pos = pos[ !is.na(pos) ]
-rn = rownames(string.path)[ rownames(string.path) %in% rownames(bs) ]
+#pos = rownames(string.path)[ rownames(string.path) %in% top ]
+#pos = unique(pos)
+#pos = pos[ !is.na(pos) ]
+#rn = rownames(string.path)[ rownames(string.path) %in% rownames(bs) ]
 
 ## negative genes are random background genes
-set.seed(3716359)
-neg = sample(rn[ !(rn %in% sfari.id$Protein.stable.ID) ] , 1000)
+#set.seed(3716359)
+#neg = sample(rn[ !(rn %in% sfari.id$Protein.stable.ID) ] , 1000)
 
-save(pos,neg,file="01_training_labels.Rdata")
+#save(pos,neg,file="01_training_labels.Rdata")
 
 save(eg.map, missing, e2e, file = "01_id_conversion.Rdata")
 
